@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    container_name: whisper-transcription-backend
+    volumes:
+      - ./uploads:/app/uploads  # Dossier pour les fichiers téléchargés
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+
+  frontend:
+    build: ./frontend
+    container_name: whisper-transcription-frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
