@@ -24,7 +24,7 @@ result = model.transcribe(audio_path)
 transcription = result['text']
 
 def generate_srt(res, audio_filename):
-    str_filename = audio_filename.replace('.wav', '.srt')
+    str_filename = os.path.splitext(os.path.basename(audio_filename))[0] + ".srt"
     try:
         with open(str_filename, 'w') as srt_file:
             segments = res['segments']

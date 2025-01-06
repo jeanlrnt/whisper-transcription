@@ -8,7 +8,7 @@ const fs = require('fs');
 
 const app = express();
 
-// Middleware pour servir les fichiers statiques du dossier 'upload'
+// Middleware pour servir les fichiers statiques du dossier 'uploads'
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Configuration de Multer pour l'upload de fichiers
@@ -43,7 +43,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
         .audioChannels(2)
         .on('end', () => {
             // Appel du script Python avec l'environnement virtuel activé
-            exec(`/bin/bash -c "source /venv/bin/activate && python3 transcribe.py ${audioPath}"`, (error, stdout, stderr) => {
+            exec(`/bin/bash -c \"source /venv/bin/activate && python3 transcribe.py ${audioPath}\"`, (error, stdout) => {
                 if (error) {
                     console.error(`Erreur lors de la transcription: ${error.message}`);
                     return res.status(500).json({ error: `Erreur lors de la transcription: ${error.message}` });
@@ -65,9 +65,9 @@ app.post('/upload', upload.single('file'), (req, res) => {
                         .on('end', () => {
                             res.json({
                                 transcription,
-                                subtitlesUrl: srtFilename,  // Utiliser un chemin relatif pour l'URL
+                                subtitlesUrl: `/uploads/${srtFilename}`,
                                 videoUrl: `/uploads/${path.basename(subtitledVideoPath)}`,
-                            })
+                            });
                         })
                         .on('error', (err) => {
                             console.error('Erreur FFmpeg : ', err.message);

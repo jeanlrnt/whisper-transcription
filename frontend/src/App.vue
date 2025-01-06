@@ -1,16 +1,17 @@
 <template>
   <div>
     <h1>Upload une vidéo pour générer des sous-titres</h1>
-    <form @submit.prevent="handleFileUpload">
-      <input type="file" ref="fileInput" />
-      <button type="submit">Télécharger</button>
-    </form>
-
+    <input type="file" @change="onFileChange" />
+    <button @click="uploadFile">Télécharger</button>
+    <div v-if="uploading">
+      <p>Temps restant estimé: {{ remainingTimeFormatted }}</p>
+      <progress :value="progress" max="100"></progress>
+    </div>
     <div v-if="subtitlesUrl">
       <h2>Sous-titres générés</h2>
-      <a :href="backUrl + subtitlesUrl" download="subtitles.srt">Télécharger les sous-titres</a>
+      <a :href="backUrl + subtitlesUrl" download>Télécharger les sous-titres</a>
       <br>
-      <a :href="backUrl + videoUrl" download="video.mp4">Télécharger la vidéo sous-titrée</a>
+      <a :href="backUrl + videoUrl" download>Télécharger la vidéo sous-titrée</a>
     </div>
 
     <div v-if="transcription">
@@ -35,12 +36,44 @@ export default {
       subtitlesUrl: null,
       transcription: null,
       videoUrl: null,
+      file: null,
+      uploading: false,
+      progress: 0,
+      remainingTime: 0,
+      result: null,
     };
   },
+  computed: {
+    remainingTimeFormatted() {
+      const minutes = Math.floor(this.remainingTime / 60);
+      const seconds = Math.floor(this.remainingTime % 60);
+      return `${minutes}m ${seconds}s`;
+    },
+  },
   methods: {
-    handleFileUpload() {
+    onFileChange(event) {
+      this.file = event.target.files[0];
+    },
+    uploadFile() {
+      if (!this.file) return;
+
+      this.uploading = true;
+      this.progress = 0;
+
+      const estimatedTime = this.file.size / 1200000; // Estimation du temps restant en secondes
+      this.remainingTime = estimatedTime; // Estimation du temps restant en secondes
+
       const formData = new FormData();
-      formData.append("file", this.$refs.fileInput.files[0]);
+      formData.append('file', this.file);
+
+      const interval = setInterval(() => {
+        if (this.remainingTime > 0) {
+          this.remainingTime--;
+          this.progress = ((estimatedTime - this.remainingTime) / estimatedTime) * 100;
+        } else {
+          clearInterval(interval);
+        }
+      }, 1000);
 
       axios
           .post(`${this.backUrl}/upload`, formData, {
@@ -55,6 +88,10 @@ export default {
           })
           .catch((error) => {
             console.error("Erreur lors de l'upload de la vidéo : ", error);
+          })
+          .finally(() => {
+            clearInterval(interval);
+            this.uploading = false;
           });
     },
   },
